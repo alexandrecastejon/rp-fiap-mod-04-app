@@ -16,7 +16,7 @@ spec:
       serviceAccountName: analytics-sa
       containers:
         - name: analytics-container
-          image: 162521700965.dkr.ecr.us-east-1.amazonaws.com/ecr-analytics-service-01:v1.0.7c5d92dad85e0e3b6c8d597b21993edabf2e893e
+          image: 162521700965.dkr.ecr.us-east-1.amazonaws.com/ecr-analytics-service-01:v1.0.ec59d52b72450a23773f5866b9697b1ba9bd7dab
           ports:
             - containerPort: 8005
           resources:
