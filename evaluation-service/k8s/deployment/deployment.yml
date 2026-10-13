@@ -40,7 +40,7 @@ spec:
           command: ['sh', '-c']
           args:
             - |
-              export SERVICE_API_KEY=$(cat /shared-data/service-api-key.txt) && /main
+              export SERVICE_API_KEY=$(cat /shared-data/service-api-key.txt) && ./main
           resources:
             requests:
               cpu: "50m"
