@@ -34,7 +34,7 @@ spec:
               mountPath: /shared-data
       containers:
         - name: evaluation-container
-          image: 162521700965.dkr.ecr.us-east-1.amazonaws.com/ecr-evaluation-service-01:v1.0.a79ef18e298e61462b8a66b30e6aa62fa224a9bd
+          image: 162521700965.dkr.ecr.us-east-1.amazonaws.com/ecr-evaluation-service-01:v1.0.fc27654271f0af447b8756ca0f15ae9075e13321
           ports:
             - containerPort: 8004
           command: ['sh', '-c']
