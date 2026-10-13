@@ -10,4 +10,4 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates curl
 COPY --from=builder /app/main .
 EXPOSE 8004
-ENTRYPOINT ["/main"]
+ENTRYPOINT ["./main"]
