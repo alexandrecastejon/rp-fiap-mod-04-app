@@ -60,6 +60,10 @@ spec:
                   key: AWS_SQS_URL
             - name: OTEL_SERVICE_NAME
               value: "analytics-service"
+            # O span CONSUMER é criado no código (continua o trace vindo da SQS);
+            # desliga a instrumentação automática equivalente para não duplicar spans
+            - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+              value: "boto3sqs"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
             - name: OTEL_EXPORTER_OTLP_PROTOCOL

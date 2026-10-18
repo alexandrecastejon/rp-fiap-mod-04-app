@@ -4,6 +4,9 @@
 !.env.example
 
 # Artefatos de build/teste
+.coverage
+coverage.xml
+coverage.out
 __pycache__/
 *.pyc
 .pytest_cache/

@@ -97,19 +97,9 @@ func main() {
 		MasterKey: masterKey,
 	}
 
-	// --- Rotas da API ---
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", app.healthHandler)
-
-	// Endpoint público para validar uma chave
-	mux.HandleFunc("/validate", app.validateKeyHandler)
-
-	// Endpoints de "admin" para criar/gerenciar chaves
-	// Eles são protegidos pelo middleware de autenticação
-	mux.Handle("/admin/keys", app.masterKeyAuthMiddleware(http.HandlerFunc(app.createKeyHandler)))
-
+	// --- Rotas da API (router.go) ---
 	// 2. Envelopa as rotas para rastrear o tempo de cada requisição
-	handler := otelhttp.NewHandler(mux, "auth-server")
+	handler := otelhttp.NewHandler(app.routes(&chaos{}), "auth-server")
 
 	log.Printf("Serviço de Autenticação (Go) rodando na porta %s", port)
 	if err := http.ListenAndServe(":"+port, handler); err != nil {

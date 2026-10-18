@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 
@@ -28,7 +29,7 @@ var ctx = context.Background()
 // App struct para injeção de dependência
 type App struct {
 	RedisClient         *redis.Client
-	SqsSvc              *sqs.SQS
+	SqsSvc              sqsiface.SQSAPI
 	SqsQueueURL         string
 	HttpClient          *http.Client
 	FlagServiceURL      string
@@ -123,7 +124,8 @@ func main() {
 	log.Println("Conectado ao Redis com sucesso!")
 
 	// Cliente SQS (AWS SDK)
-	var sqsSvc *sqs.SQS
+	// Interface (e não *sqs.SQS) para evitar um nil tipado e permitir testes
+	var sqsSvc sqsiface.SQSAPI
 	if sqsQueueURL != "" {
 		sess, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
 		if err != nil {
@@ -133,8 +135,11 @@ func main() {
 	}
 
 	// Cliente HTTP (com timeout)
+	// O transporte do OTel cria spans de cliente e propaga o contexto do trace
+	// (cabeçalho traceparent) para o flag-service e o targeting-service
 	httpClient := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout:   5 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
 
 	// Cria a instância da App
