@@ -1,11 +1,11 @@
 FROM python:3.11-slim@sha256:e88e9763f943ec1834f992a4b51e0f24500486803e8bc534e5767af9ea65f6ce AS builder
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential && rm -rf /var/lib/apt/lists/*
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt .
-# Dependências com versões fixadas; o bootstrap instala as instrumentações compatíveis com o distro fixado
-RUN pip install --no-cache-dir -r requirements.txt && opentelemetry-bootstrap -a install
+# Lockfile com hashes: toda dependência (inclusive transitiva) tem versão e hash
+# verificados; só pacotes binários (wheels), sem executar setup.py de terceiros
+RUN pip install --no-cache-dir --only-binary :all: --require-hashes -r requirements.txt
 
 FROM python:3.11-slim@sha256:e88e9763f943ec1834f992a4b51e0f24500486803e8bc534e5767af9ea65f6ce
 ENV PATH="/opt/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1

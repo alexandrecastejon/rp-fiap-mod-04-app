@@ -1,0 +1,18 @@
+# Dependências diretas (versões fixadas). O lockfile requirements.txt é gerado a partir daqui:
+#   uv pip compile requirements.in --universal --python-version 3.11 --generate-hashes -o requirements.txt
+# e instalado com --require-hashes --only-binary :all: (cada pacote verificado pelo hash).
+
+Flask==3.1.3
+gunicorn==22.0.0
+python-dotenv==1.2.4
+boto3==1.26.50
+Werkzeug==3.1.9
+
+# OpenTelemetry: SDK + somente as instrumentações usadas por este serviço
+opentelemetry-api==1.45.1
+opentelemetry-sdk==1.45.1
+opentelemetry-distro==0.66b1
+opentelemetry-exporter-otlp==1.45.1
+opentelemetry-instrumentation-flask==0.66b1
+opentelemetry-instrumentation-logging==0.66b1
+opentelemetry-instrumentation-botocore==0.66b1
