@@ -13,9 +13,21 @@ spec:
       labels:
         app: flag-service
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
       - name: flag-db-migration
         image: postgres:15-alpine
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         command:
         - /bin/sh
         - -c
@@ -61,6 +73,11 @@ spec:
       containers:
         - name: flag-container
           image: 851725564784.dkr.ecr.us-east-1.amazonaws.com/ecr-flag-service-01:v1.0.d81fe7ca204ec5b54a5aa6e6c1ea66af5c8027dd
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8002
           resources:
@@ -86,6 +103,9 @@ spec:
             periodSeconds: 15
             successThreshold: 1
             failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           env:
             - name: AUTH_SERVICE_URL
               valueFrom:
@@ -107,3 +127,8 @@ spec:
               value: "otlp"
             - name: OTEL_EXPORTER_OTLP_INSECURE
               value: "true"
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

@@ -1,0 +1,17 @@
+# Só o necessário para a imagem: fora testes, manifestos, segredos locais e artefatos
+.env
+.env.*
+*_test.go
+test_*.py
+k8s/
+db/
+sqs/
+notes.txt
+README.md
+.trivyignore
+coverage.*
+.coverage
+__pycache__/
+.pytest_cache/
+Dockerfile
+.dockerignore
