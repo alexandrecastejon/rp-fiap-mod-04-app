@@ -14,33 +14,11 @@ spec:
         app: evaluation-service
     spec:
       serviceAccountName: evaluation-sa
-      initContainers:
-        - name: token-fetcher
-          image: curlimages/curl:latest
-          command: ['sh', '-c']
-          args:
-            - |
-              until curl -s -f http://auth-service.eks-namespace.svc.cluster.local:8001/health; do echo "Aguardando auth-service..."; sleep 5; done;
-              TOKEN=$(curl -s -X POST http://auth-service.eks-namespace.svc.cluster.local:8001/admin/keys -H 'Content-Type: application/json' -H "Authorization: Bearer admin-secreto-123" -d '{"name": "evaluation-auto-key"}' | grep -o '"key":"[^"]*' | cut -d'"' -f4)
-              echo $TOKEN > /shared-data/service-api-key.txt
-          env:
-            - name: SERVICE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: evaluation-secret
-                  key: SERVICE_API_KEY
-          volumeMounts:
-            - name: shared-data
-              mountPath: /shared-data
       containers:
         - name: evaluation-container
-          image: 162521700965.dkr.ecr.us-east-1.amazonaws.com/ecr-evaluation-service-01:v1.0.d81fe7ca204ec5b54a5aa6e6c1ea66af5c8027dd
+          image: 851725564784.dkr.ecr.us-east-1.amazonaws.com/ecr-evaluation-service-01:v1.0.d81fe7ca204ec5b54a5aa6e6c1ea66af5c8027dd
           ports:
             - containerPort: 8004
-          command: ['sh', '-c']
-          args:
-            - |
-              export SERVICE_API_KEY=$(cat /shared-data/service-api-key.txt) && ./main
           resources:
             requests:
               cpu: "50m"
@@ -65,6 +43,13 @@ spec:
             successThreshold: 1
             failureThreshold: 3
           env:
+            # Chave de serviço vem do GitHub Secret SERVICE_API_KEY (injetada pelo pipeline);
+            # o auth-service registra apenas o hash dela
+            - name: SERVICE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: evaluation-secret
+                  key: SERVICE_API_KEY
             - name: AWS_REGION
               valueFrom:
                 configMapKeyRef:
@@ -105,9 +90,3 @@ spec:
               value: "otlp"
             - name: OTEL_EXPORTER_OTLP_INSECURE
               value: "true"
-          volumeMounts:
-            - name: shared-data
-              mountPath: /shared-data
-      volumes:
-        - name: shared-data
-          emptyDir: {}

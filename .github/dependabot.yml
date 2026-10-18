@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "gomod"
+    directories:
+      - "/auth-service"
+      - "/evaluation-service"
+    schedule:
+      interval: "weekly"
+    groups:
+      go:
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/flag-service"
+      - "/targeting-service"
+      - "/analytics-service"
+    schedule:
+      interval: "weekly"
+    groups:
+      python:
+        patterns: ["*"]
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/auth-service"
+      - "/flag-service"
+      - "/targeting-service"
+      - "/evaluation-service"
+      - "/analytics-service"
+    schedule:
+      interval: "weekly"
+    groups:
+      docker:
+        patterns: ["*"]

@@ -19,7 +19,7 @@ type: Opaque
 stringData:
   AWS_SQS_URL: "#{aws_sqs_url}#"
   AWS_REDIS_URL: "redis://#{aws_cache_endpoint}#"
-  SERVICE_API_KEY: "SUA_CHAVE_DE_SERVICO"
+  SERVICE_API_KEY: "#{service_api_key}#"
 
 ---
 apiVersion: v1

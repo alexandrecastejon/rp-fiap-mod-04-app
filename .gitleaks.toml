@@ -1,0 +1,29 @@
+# Regras padrão do gitleaks + exceções pontuais para falsos positivos conhecidos.
+# Não ignoramos arquivos inteiros: um segredo real nesses arquivos continua sendo detectado.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Tag de imagem GitOps (hash do commit, não é segredo)"
+regexTarget = "match"
+regexes = ['''ecr-[a-z]+-service-01:v1\.0\.[0-9a-f]{40}''']
+
+[[allowlists]]
+description = "Placeholders substituídos pelo pipeline (#{token}#)"
+regexTarget = "match"
+regexes = ['''#\{[a-z_]+\}#''']
+
+[[allowlists]]
+description = "Nome da tabela DynamoDB em ConfigMap (a regra de Secret YAML cruza o separador ---)"
+regexTarget = "secret"
+regexes = ['''^AWS_DYNAMODB_TABLE: "ToggleMasterAnalytics"$''']
+
+[[allowlists]]
+description = "Chaves de exemplo da documentação"
+regexTarget = "secret"
+regexes = [
+  '''^SUA_CHAVE''',
+  '''^tm_key_a1b2c3d4''',
+  '''^chave-errada''',
+  '''^<[A-Z_]+>$''',
+]

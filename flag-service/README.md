@@ -53,7 +53,7 @@ Este é o serviço de CRUD (Create, Read, Update, Delete) do projeto ToggleMaste
     ```bash
     curl -X POST http://localhost:8001/admin/keys \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer admin-secreto-123" \
+    -H "Authorization: Bearer <MASTER_KEY>" \
     -d '{"name": "admin-para-flag-service"}'
     ```
 2.  Copie a chave retornada (ex: `tm_key_...`). Vamos chamá-la de `SUA_CHAVE_API` no resto dos exemplos.

@@ -3,12 +3,12 @@ Invoke-RestMethod -Uri "http://localhost:8002/health"
 Invoke-RestMethod -Uri "http://localhost:8001/admin/keys" `
     -Method Post `
     -ContentType "application/json" `
-    -Headers @{ "Authorization" = "Bearer admin-secreto-123" } `
+    -Headers @{ "Authorization" = "Bearer <MASTER_KEY>" } `
     -Body '{"name": "admin-para-flag-service"}'
 
 Invoke-RestMethod -Uri "http://localhost:8002/flags" `
     -Method Post `
-    -Headers @{ "Authorization" = "Bearer tm_key_1899e759200e97710711c2eea9ed7b0e6c4e50531517b757438c8eecb1383cfc" } `
+    -Headers @{ "Authorization" = "Bearer <API_KEY>" } `
     -ContentType "application/json" `
     -Body '{
         "name": "enable-new-dashboard",
@@ -19,10 +19,10 @@ Invoke-RestMethod -Uri "http://localhost:8002/flags" `
 Invoke-RestMethod -Uri "http://localhost:8002/flags"
 
 Invoke-RestMethod -Uri "http://localhost:8002/flags" `
-    -Headers @{ "Authorization" = "Bearer tm_key_1899e759200e97710711c2eea9ed7b0e6c4e50531517b757438c8eecb1383cfc" }
+    -Headers @{ "Authorization" = "Bearer <API_KEY>" }
 
 Invoke-RestMethod -Uri "http://localhost:8002/flags/enable-new-dashboard" `
     -Method Put `
     -ContentType "application/json" `
-    -Headers @{ "Authorization" = "Bearer tm_key_1899e759200e97710711c2eea9ed7b0e6c4e50531517b757438c8eecb1383cfc" } `
+    -Headers @{ "Authorization" = "Bearer <API_KEY>" } `
     -Body '{"is_enabled": false}'

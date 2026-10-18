@@ -5,7 +5,8 @@ metadata:
   namespace: "#{namespace}#"
 type: Opaque
 stringData:
-  MASTER_KEY: "admin-secreto-123"
+  MASTER_KEY: "#{master_key}#"
+  SERVICE_KEY_HASH: "#{service_key_hash}#"
   DATABASE_URL: "postgres://#{db_user}#:#{db_pass}#@#{rds_endpoint}#/auth_db?sslmode=require"
 
 ---

@@ -3,7 +3,7 @@ Invoke-RestMethod -Uri "http://localhost:8004/health"
 Invoke-RestMethod -Uri "http://localhost:8001/admin/keys" `
     -Method Post `
     -ContentType "application/json" `
-    -Headers @{ "Authorization" = "Bearer admin-secreto-123" } `
+    -Headers @{ "Authorization" = "Bearer <MASTER_KEY>" } `
     -Body '{"name": "evaluation-service-key"}'
 
 # Teste User 1

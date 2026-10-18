@@ -1,0 +1,18 @@
+# Variáveis locais (use os arquivos .env.example como modelo)
+.env
+*.env
+!.env.example
+
+# Artefatos de build/teste
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*/main
+
+# IDE / SO
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

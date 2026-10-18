@@ -3,11 +3,11 @@ Invoke-RestMethod -Uri "http://localhost:8001/health"
 Invoke-RestMethod -Uri "http://localhost:8001/admin/keys" `
     -Method Post `
     -ContentType "application/json" `
-    -Headers @{ "Authorization" = "Bearer admin-secreto-123" } `
+    -Headers @{ "Authorization" = "Bearer <MASTER_KEY>" } `
     -Body '{"name": "meu-primeiro-servico"}'
 
 Invoke-RestMethod -Uri "http://localhost:8001/validate" `
-    -Headers @{ "Authorization" = "Bearer tm_key_bcb49ef419ce24978950a7ba9596688189c423e7332968c3d63f45f5db9f90c0" }
+    -Headers @{ "Authorization" = "Bearer <API_KEY>" }
 
 Invoke-RestMethod -Uri "http://localhost:8001/validate" `
     -Headers @{ "Authorization" = "Bearer chave-errada-123" }

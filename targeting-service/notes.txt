@@ -3,7 +3,7 @@ Invoke-RestMethod -Uri "http://localhost:8003/health"
 Invoke-RestMethod -Uri "http://localhost:8003/rules" `
     -Method Post `
     -ContentType "application/json" `
-    -Headers @{ "Authorization" = "Bearer tm_key_1899e759200e97710711c2eea9ed7b0e6c4e50531517b757438c8eecb1383cfc" } `
+    -Headers @{ "Authorization" = "Bearer <API_KEY>" } `
     -Body '{
         "flag_name": "enable-new-dashboard",
         "is_enabled": true,
@@ -14,12 +14,12 @@ Invoke-RestMethod -Uri "http://localhost:8003/rules" `
     }'
 
 Invoke-RestMethod -Uri "http://localhost:8003/rules/enable-new-dashboard" `
-    -Headers @{ "Authorization" = "Bearer tm_key_1899e759200e97710711c2eea9ed7b0e6c4e50531517b757438c8eecb1383cfc" }
+    -Headers @{ "Authorization" = "Bearer <API_KEY>" }
 
 Invoke-RestMethod -Uri "http://localhost:8003/rules/enable-new-dashboard" `
     -Method Put `
     -ContentType "application/json" `
-    -Headers @{ "Authorization" = "Bearer tm_key_1899e759200e97710711c2eea9ed7b0e6c4e50531517b757438c8eecb1383cfc" } `
+    -Headers @{ "Authorization" = "Bearer <API_KEY>" } `
     -Body '{
         "rules": {
             "type": "PERCENTAGE",
