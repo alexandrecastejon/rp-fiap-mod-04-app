@@ -1,2 +1,4 @@
-# Ignorado temporariamente para fins academicos (Atualizacao para pgx/v5 pendente)
-CVE-2026-32286
+# Sem supressões ativas.
+# Política: toda exceção precisa de justificativa e data de expiração, por exemplo:
+#   CVE-AAAA-NNNNN exp:AAAA-MM-DD   # motivo + link da issue de correção
+# Após a data, o Trivy volta a reportar a vulnerabilidade automaticamente.
