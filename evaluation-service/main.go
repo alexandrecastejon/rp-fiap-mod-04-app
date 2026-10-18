@@ -133,8 +133,11 @@ func main() {
 	}
 
 	// Cliente HTTP (com timeout)
+	// O transporte do OTel cria spans de cliente e propaga o contexto do trace
+	// (cabeçalho traceparent) para o flag-service e o targeting-service
 	httpClient := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout:   5 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
 
 	// Cria a instância da App

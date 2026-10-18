@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
+	"path"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Evento que será enviado para a fila
@@ -17,13 +23,48 @@ type EvaluationEvent struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
+// sqsAttributesCarrier adapta os MessageAttributes da SQS ao propagador do
+// OpenTelemetry, para que o contexto do trace (traceparent) viaje com a mensagem
+// e o analytics-service continue o mesmo trace ao consumi-la.
+type sqsAttributesCarrier map[string]*sqs.MessageAttributeValue
+
+func (c sqsAttributesCarrier) Get(key string) string {
+	if v, ok := c[key]; ok && v.StringValue != nil {
+		return *v.StringValue
+	}
+	return ""
+}
+
+func (c sqsAttributesCarrier) Set(key, value string) {
+	c[key] = &sqs.MessageAttributeValue{DataType: aws.String("String"), StringValue: aws.String(value)}
+}
+
+func (c sqsAttributesCarrier) Keys() []string {
+	keys := make([]string, 0, len(c))
+	for k := range c {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // sendEvaluationEvent envia um evento para a fila SQS
-func (a *App) sendEvaluationEvent(userID, flagName string, result bool) {
+func (a *App) sendEvaluationEvent(ctx context.Context, userID, flagName string, result bool) {
 	// Se a URL da fila não foi configurada, apenas loga localmente e sai.
 	if a.SqsSvc == nil || a.SqsQueueURL == "" {
 		log.Printf("[SQS_DISABLED] Evento: User '%s', Flag '%s', Result '%t'", userID, flagName, result)
 		return
 	}
+
+	queueName := path.Base(a.SqsQueueURL)
+	ctx, span := otel.Tracer("evaluation-service/sqs").Start(ctx, queueName+" publish",
+		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "aws_sqs"),
+			attribute.String("messaging.operation.type", "publish"),
+			attribute.String("messaging.destination.name", queueName),
+		),
+	)
+	defer span.End()
 
 	event := EvaluationEvent{
 		UserID:    userID,
@@ -35,18 +76,27 @@ func (a *App) sendEvaluationEvent(userID, flagName string, result bool) {
 	body, err := json.Marshal(event)
 	if err != nil {
 		log.Printf("Erro ao serializar evento SQS: %v", err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "falha ao serializar evento")
 		return
 	}
 
+	attrs := sqsAttributesCarrier{}
+	otel.GetTextMapPropagator().Inject(ctx, attrs)
+
 	// Envia a mensagem
-	_, err = a.SqsSvc.SendMessage(&sqs.SendMessageInput{
-		MessageBody: aws.String(string(body)),
-		QueueUrl:    aws.String(a.SqsQueueURL),
+	out, err := a.SqsSvc.SendMessageWithContext(ctx, &sqs.SendMessageInput{
+		MessageBody:       aws.String(string(body)),
+		QueueUrl:          aws.String(a.SqsQueueURL),
+		MessageAttributes: attrs,
 	})
 
 	if err != nil {
 		log.Printf("Erro ao enviar mensagem para SQS: %v", err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "falha ao publicar na SQS")
 	} else {
+		span.SetAttributes(attribute.String("messaging.message.id", aws.StringValue(out.MessageId)))
 		log.Printf("Evento de avaliação enviado para SQS (Flag: %s)", flagName)
 	}
 }

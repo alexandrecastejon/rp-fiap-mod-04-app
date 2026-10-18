@@ -101,12 +101,16 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", app.healthHandler)
 
+	// Injeção de falha controlada (demonstração de alerta + self-healing)
+	faults := &chaos{}
+
 	// Endpoint público para validar uma chave
-	mux.HandleFunc("/validate", app.validateKeyHandler)
+	mux.Handle("/validate", faults.middleware(http.HandlerFunc(app.validateKeyHandler)))
 
 	// Endpoints de "admin" para criar/gerenciar chaves
 	// Eles são protegidos pelo middleware de autenticação
 	mux.Handle("/admin/keys", app.masterKeyAuthMiddleware(http.HandlerFunc(app.createKeyHandler)))
+	mux.Handle("/admin/chaos", app.masterKeyAuthMiddleware(http.HandlerFunc(faults.handler)))
 
 	// 2. Envelopa as rotas para rastrear o tempo de cada requisição
 	handler := otelhttp.NewHandler(mux, "auth-server")

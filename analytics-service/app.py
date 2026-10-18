@@ -10,6 +10,8 @@ from botocore.exceptions import NoCredentialsError, ClientError
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 from datetime import datetime, timezone
+from opentelemetry import propagate, trace
+from opentelemetry.trace import SpanKind, Status, StatusCode
 
 # Configura o logging
 logging.basicConfig(
@@ -31,6 +33,10 @@ if not all([AWS_REGION, SQS_QUEUE_URL, DYNAMODB_TABLE_NAME]):
     )
     sys.exit(1)
 
+# Nome da fila (último segmento da URL), usado nos spans de mensageria
+QUEUE_NAME = SQS_QUEUE_URL.rstrip("/").rsplit("/", 1)[-1]
+tracer = trace.get_tracer("analytics-service/sqs")
+
 # --- Clientes Boto3 ---
 # Criamos a sessão uma vez
 try:
@@ -49,7 +55,39 @@ except Exception as e:
 # --- SQS Worker ---
 
 
+def _trace_carrier(message):
+    """Extrai dos MessageAttributes o contexto de trace (traceparent) enviado
+    pelo evaluation-service, no formato esperado pelo propagador do OTel."""
+    attributes = message.get("MessageAttributes") or {}
+    return {
+        key: value.get("StringValue", "")
+        for key, value in attributes.items()
+        if value.get("DataType") == "String"
+    }
+
+
 def process_message(message):
+    """Processa uma mensagem SQS continuando o trace iniciado no evaluation-service.
+
+    O span CONSUMER tem como pai o span PRODUCER que publicou a mensagem, o que
+    conecta evaluation -> SQS -> analytics -> DynamoDB no mesmo trace distribuído.
+    """
+    parent = propagate.extract(_trace_carrier(message))
+    with tracer.start_as_current_span(
+        f"{QUEUE_NAME} process",
+        context=parent,
+        kind=SpanKind.CONSUMER,
+        attributes={
+            "messaging.system": "aws_sqs",
+            "messaging.operation.type": "process",
+            "messaging.destination.name": QUEUE_NAME,
+            "messaging.message.id": message.get("MessageId", ""),
+        },
+    ) as span:
+        _process_message(message, span)
+
+
+def _process_message(message, span):
     """Processa uma única mensagem SQS e a insere no DynamoDB"""
     try:
         log.info(f"Processando mensagem ID: {message['MessageId']}")
@@ -77,16 +115,22 @@ def process_message(message):
             QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message["ReceiptHandle"]
         )
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         log.error(f"Erro ao decodificar JSON da mensagem ID: {message['MessageId']}")
+        span.record_exception(e)
+        span.set_status(Status(StatusCode.ERROR, "JSON inválido na mensagem"))
         # Não deleta a mensagem, pode ser uma "poison pill"
     except ClientError as e:
         log.error(
             f"Erro do Boto3 (DynamoDB ou SQS) ao processar {message['MessageId']}: {e}"
         )
+        span.record_exception(e)
+        span.set_status(Status(StatusCode.ERROR, "erro do DynamoDB ou SQS"))
         # Não deleta a mensagem, tenta novamente
     except Exception as e:
         log.error(f"Erro inesperado ao processar {message['MessageId']}: {e}")
+        span.record_exception(e)
+        span.set_status(Status(StatusCode.ERROR, "erro inesperado"))
         # Não deleta a mensagem, tenta novamente
 
 
@@ -100,6 +144,8 @@ def sqs_worker_loop():
                 QueueUrl=SQS_QUEUE_URL,
                 MaxNumberOfMessages=10,  # Processa em lotes de até 10
                 WaitTimeSeconds=20,
+                # Necessário para receber o traceparent propagado pelo evaluation-service
+                MessageAttributeNames=["All"],
             )
 
             messages = response.get("Messages", [])
