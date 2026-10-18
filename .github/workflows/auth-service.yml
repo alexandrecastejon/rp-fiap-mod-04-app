@@ -78,6 +78,7 @@ jobs:
             -Dsonar.go.version=${{ env.GO_VERSION }}
             -Dsonar.qualitygate.wait=true
             -Dsonar.go.coverage.reportPaths=coverage.out
+            -Dsonar.sources=.
             -Dsonar.tests=.
             -Dsonar.test.inclusions=**/*_test.go
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/*.spec.ts,**/*.test.ts,**/*.test.js,**/*.spec.js,**/*.d.ts,**/*.json,**/*.yml,**/*.yaml,**/*.md,**/*_test.go
