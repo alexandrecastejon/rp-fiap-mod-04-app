@@ -22,3 +22,21 @@ jobs:
         run: |
           docker run --rm -v "${{ github.workspace }}:/repo" zricethezav/gitleaks:v8.30.1 \
             dir /repo --config /repo/.gitleaks.toml --redact --verbose --exit-code 1
+
+  iac-scan:
+    name: IAC SCAN - TRIVY CONFIG (DOCKERFILES E MANIFESTOS)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # Bloqueia configurações inseguras (contêiner como root, rootfs gravável,
+      # privilégios extras...) de severidade ALTA ou CRÍTICA
+      - name: Trivy - Config Scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'

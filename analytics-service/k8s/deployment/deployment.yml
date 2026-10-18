@@ -13,10 +13,19 @@ spec:
       labels:
         app: analytics-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: analytics-sa
       containers:
         - name: analytics-container
           image: 851725564784.dkr.ecr.us-east-1.amazonaws.com/ecr-analytics-service-01:v1.0.d81fe7ca204ec5b54a5aa6e6c1ea66af5c8027dd
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8005
           resources:
@@ -42,6 +51,9 @@ spec:
             periodSeconds: 15
             successThreshold: 1
             failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           env:
             - name: AWS_REGION
               valueFrom:
@@ -72,3 +84,8 @@ spec:
               value: "otlp"
             - name: OTEL_EXPORTER_OTLP_INSECURE
               value: "true"
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

@@ -13,10 +13,19 @@ spec:
       labels:
         app: evaluation-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: evaluation-sa
       containers:
         - name: evaluation-container
           image: 851725564784.dkr.ecr.us-east-1.amazonaws.com/ecr-evaluation-service-01:v1.0.d81fe7ca204ec5b54a5aa6e6c1ea66af5c8027dd
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8004
           resources:

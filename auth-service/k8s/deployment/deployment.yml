@@ -13,9 +13,21 @@ spec:
       labels:
         app: auth-service
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
       - name: auth-db-migration
         image: postgres:15-alpine
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         command:
         - /bin/sh
         - -c
@@ -47,6 +59,11 @@ spec:
       containers:
         - name: auth-container
           image: 851725564784.dkr.ecr.us-east-1.amazonaws.com/ecr-auth-service-01:v1.0.d81fe7ca204ec5b54a5aa6e6c1ea66af5c8027dd
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8001
           resources:
