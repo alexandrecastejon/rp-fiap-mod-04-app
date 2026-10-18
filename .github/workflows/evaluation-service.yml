@@ -1,3 +1,7 @@
+# Pipeline DevSecOps do serviço
+#   PR e push na main: SCA (Trivy fs) -> SAST (SonarCloud + quality gate) -> build/lint/testes
+#                      -> build da imagem -> container scan (Trivy) — bloqueia em vulnerabilidade CRÍTICA
+#   Somente push na main: push no ECR (OIDC) -> deploy dos manifests -> atualização da tag no GitOps (ArgoCD)
 name: FIAP - MODULO 04 - APP - EVALUATION SERVICE
 
 on:
