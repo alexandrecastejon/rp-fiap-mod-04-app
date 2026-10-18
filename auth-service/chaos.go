@@ -39,7 +39,8 @@ func (c *chaos) handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		c.errorRate.Store(*req.ErrorRate)
-		log.Printf("CHAOS: injeção de falha ajustada para %d%% das requisições em /validate", *req.ErrorRate)
+		// Registra o valor já validado e armazenado (não o dado bruto da requisição)
+		log.Printf("CHAOS: injeção de falha ajustada para %d%% das requisições em /validate", c.errorRate.Load())
 	default:
 		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
@@ -55,7 +56,8 @@ func (c *chaos) handler(w http.ResponseWriter, r *http.Request) {
 func (c *chaos) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if rate := c.errorRate.Load(); rate > 0 && rand.Int64N(100) < rate {
-			log.Printf("ERROR: falha injetada (chaos %d%%) em %s %s", rate, r.Method, r.URL.Path)
+			// %q escapa caracteres de controle: impede forjar linhas de log pela URL
+			log.Printf("ERROR: falha injetada (chaos %d%%) em %q %q", rate, r.Method, r.URL.Path)
 			http.Error(w, "Erro interno (falha injetada)", http.StatusInternalServerError)
 			return
 		}

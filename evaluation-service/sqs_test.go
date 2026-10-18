@@ -26,6 +26,9 @@ func TestSqsAttributesCarrierPropagaTrace(t *testing.T) {
 	if !ok || v.DataType == nil || *v.DataType != "String" {
 		t.Fatalf("traceparent ausente ou com DataType inválido: %#v", attrs)
 	}
+	if keys := attrs.Keys(); len(keys) != 1 || keys[0] != "traceparent" {
+		t.Fatalf("Keys deveria listar só o traceparent, obteve %v", keys)
+	}
 
 	got := trace.SpanContextFromContext(prop.Extract(context.Background(), attrs))
 	if got.TraceID() != traceID || got.SpanID() != spanID || !got.IsSampled() {

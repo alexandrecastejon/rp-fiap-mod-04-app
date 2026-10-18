@@ -102,7 +102,7 @@ func (a *App) createKeyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Nova chave criada com sucesso (ID: %d, Name: %s)", newID, req.Name)
+	log.Printf("Nova chave criada com sucesso (ID: %d, Name: %q)", newID, req.Name)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(CreateKeyResponse{
 		Name:    req.Name,

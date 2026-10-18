@@ -86,3 +86,47 @@ def test_consumer_sem_contexto_inicia_novo_trace(mock_sqs, mock_dynamo):
     span = [s for s in exporter.get_finished_spans() if s.kind == SpanKind.CONSUMER][0]
     assert span.parent is None
     mock_dynamo.put_item.assert_called_once()
+
+
+@patch("app.dynamodb_client")
+@patch("app.sqs_client")
+def test_consumer_erro_do_dynamodb_marca_span(mock_sqs, mock_dynamo):
+    """Falha do DynamoDB: span com erro e mensagem mantida na fila para nova tentativa."""
+    from botocore.exceptions import ClientError
+
+    exporter.clear()
+    mock_dynamo.put_item.side_effect = ClientError(
+        {"Error": {"Code": "ProvisionedThroughputExceededException", "Message": "x"}}, "PutItem"
+    )
+    body = json.dumps({"user_id": "u3", "flag_name": "f3", "result": True})
+
+    app.process_message(_message(body))
+
+    span = [s for s in exporter.get_finished_spans() if s.kind == SpanKind.CONSUMER][0]
+    assert span.status.status_code == StatusCode.ERROR
+    assert any(e.name == "exception" for e in span.events)
+    mock_sqs.delete_message.assert_not_called()
+
+
+@patch("app.dynamodb_client")
+@patch("app.sqs_client")
+def test_consumer_erro_inesperado_marca_span(mock_sqs, mock_dynamo):
+    """Mensagem sem campo obrigatório gera erro inesperado registrado no span."""
+    exporter.clear()
+    body = json.dumps({"user_id": "u4"})  # sem flag_name
+
+    app.process_message(_message(body))
+
+    span = [s for s in exporter.get_finished_spans() if s.kind == SpanKind.CONSUMER][0]
+    assert span.status.status_code == StatusCode.ERROR
+    mock_sqs.delete_message.assert_not_called()
+
+
+def test_trace_carrier_ignora_atributos_nao_texto():
+    """Só atributos String entram no carrier do propagador."""
+    message = {"MessageAttributes": {
+        "traceparent": {"DataType": "String", "StringValue": "00-abc-def-01"},
+        "payload": {"DataType": "Binary", "BinaryValue": b"x"},
+    }}
+    assert app._trace_carrier(message) == {"traceparent": "00-abc-def-01"}
+    assert app._trace_carrier({}) == {}

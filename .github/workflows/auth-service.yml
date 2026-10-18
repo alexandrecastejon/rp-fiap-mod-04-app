@@ -1,6 +1,7 @@
 # Pipeline DevSecOps do serviço
-#   PR e push na main: SCA (Trivy fs) -> SAST (SonarCloud + quality gate) -> build/lint/testes
-#                      -> build da imagem -> container scan (Trivy) — bloqueia em vulnerabilidade CRÍTICA
+#   PR e push na main: SCA (Trivy fs) -> build/lint/testes com cobertura -> SAST (SonarCloud +
+#                      quality gate com a cobertura) -> build da imagem -> container scan (Trivy)
+#                      — bloqueia em vulnerabilidade CRÍTICA ou quality gate reprovado
 #   Somente push na main: push no ECR (OIDC) -> deploy dos manifests -> atualização da tag no GitOps (ArgoCD)
 name: FIAP - MODULO 04 - APP - AUTH SERVICE
 
@@ -48,12 +49,20 @@ jobs:
 
   sast:
     name: SAST - SONARCLOUD - CODE ANALYSIS
+    # Roda depois dos testes para analisar também a cobertura
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+
+      - name: Coverage - Download
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: coverage-${{ env.SERVICE_NAME }}
+          path: ${{ env.SERVICE_NAME }}
 
       - name: SonarCloud - Scan
         uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
@@ -68,11 +77,14 @@ jobs:
             -Dsonar.projectKey=${{ github.event.repository.name }}_${{ env.SERVICE_NAME }}
             -Dsonar.go.version=${{ env.GO_VERSION }}
             -Dsonar.qualitygate.wait=true
-            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/*.spec.ts,**/*.test.ts,**/*.test.js,**/*.spec.js,**/*.d.ts,**/*.json,**/*.yml,**/*.yaml,**/*.md
+            -Dsonar.go.coverage.reportPaths=coverage.out
+            -Dsonar.tests=.
+            -Dsonar.test.inclusions=**/*_test.go
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/*.spec.ts,**/*.test.ts,**/*.test.js,**/*.spec.js,**/*.d.ts,**/*.json,**/*.yml,**/*.yaml,**/*.md,**/*_test.go
 
   build-and-test:
     name: BUILD, LINT AND UNIT TESTS - SERVICE - AUTH
-    needs: [sca, sast]
+    needs: sca
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -96,7 +108,14 @@ jobs:
 
       - name: Go - Run - Unit Tests
         working-directory: ${{ env.SERVICE_NAME }}
-        run: go test -v ./...
+        run: go test -v -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Coverage - Upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage-${{ env.SERVICE_NAME }}
+          path: ${{ env.SERVICE_NAME }}/coverage.out
+          retention-days: 1
 
       - name: Go - Run - Build
         working-directory: ${{ env.SERVICE_NAME }}
@@ -104,7 +123,7 @@ jobs:
 
   docker-build:
     name: DOCKER BUILD - SERVICE - AUTH
-    needs: build-and-test
+    needs: sast
     runs-on: ubuntu-latest
     permissions:
       contents: read
