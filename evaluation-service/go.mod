@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/alicebob/miniredis/v2 v2.40.0
-	github.com/aws/aws-sdk-go v1.51.10
+	github.com/aws/aws-sdk-go v1.55.8
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/joho/godotenv v1.5.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
