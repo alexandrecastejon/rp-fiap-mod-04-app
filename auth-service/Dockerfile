@@ -1,5 +1,5 @@
 # Build: dependências exatamente como no go.sum (download + verify, sem "go mod tidy")
-FROM golang:1.26-alpine@sha256:3082400e369fa24d5fc60bca20edab3f6d604e0c5a690ec66b295eff4dd87ade AS builder
+FROM golang:1.27-alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS builder
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
